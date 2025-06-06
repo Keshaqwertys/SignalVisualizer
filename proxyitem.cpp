@@ -162,8 +162,8 @@ void SubComponentProxyItem::paint(QPainter* painter, const QStyleOptionGraphicsI
     m_component->paint(painter, option, widget);
 }
 
-ComponentOverlayTextItem::ComponentOverlayTextItem(Component* comp, SignalVisualizerView* view, QGraphicsItem* parent)
-    : QGraphicsItem(parent), m_component(comp), m_visualizerView(view)
+ComponentOverlayTextItem::ComponentOverlayTextItem(Component* comp, QGraphicsItem* parent)
+    : QGraphicsItem(parent), m_component(comp)
 {
     // Label (ID)
     if (Label* idLabel = comp->getIdLabel()) {
