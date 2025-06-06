@@ -67,7 +67,7 @@ private:
 
 class ComponentOverlayTextItem : public QGraphicsItem {
 public:
-    ComponentOverlayTextItem(Component* comp, SignalVisualizerView* view, QGraphicsItem* parent = nullptr);
+    ComponentOverlayTextItem(Component* comp, QGraphicsItem* parent = nullptr);
 
     void updateTextPosition();
     void setTextVisible(bool visible);
@@ -81,7 +81,6 @@ public:
 
 private:
     Component* m_component;
-    SignalVisualizerView* m_visualizerView;
     Label* m_idTextItem = nullptr;
     Label* m_valLabel = nullptr;
     Label* m_posDesignationItem = nullptr;
