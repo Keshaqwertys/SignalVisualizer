@@ -23,6 +23,8 @@ class SignalVisualizerWidget : public QWidget
     Q_OBJECT
     friend class SignalVisualizerView;
     friend class SignalVisualizer;
+    friend class MainComponentProxyItem;
+    friend class ComponentOverlayTextItem;
 
 public:
     explicit SignalVisualizerWidget(QWidget *parent = nullptr);
