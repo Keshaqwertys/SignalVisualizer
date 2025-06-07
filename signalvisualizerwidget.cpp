@@ -1,4 +1,4 @@
-#include "signalvisualizerwidget.h" 
+#include "signalvisualizerwidget.h"
 #include <QGraphicsRectItem>
 #include <QGraphicsLineItem>
 #include <QGraphicsTextItem>
