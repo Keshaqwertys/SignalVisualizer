@@ -81,7 +81,7 @@ SignalVisualizer::SignalVisualizer(QObject *parent)
             f.isDATA = f.isDestination = true;
         }}
     },
-    m_multiHandlers{
+    m_multiHandlers {
         {"MCU", [this](NetFlags& f, QString& d, Component* c, const QString& pid) {
             QRegularExpression regex("^[\\w\\s]+-\\d+-PORT([A-Z][a-zA-Z0-9]+)$", QRegularExpression::CaseInsensitiveOption);
             QRegularExpressionMatch match = regex.match(pid);
@@ -101,8 +101,8 @@ SignalVisualizer::SignalVisualizer(QObject *parent)
         }},
         
         {"I2CToParallel", [this](NetFlags& f, QString& d, Component* c, const QString& pid) {
-            if (matchRegex(pid,"^I2C to Parallel-\\d+-in0$")) f.isSDA = f.isDestination = true;
-            else if (matchRegex(pid,"^I2C to Parallel-\\d+-in1$")) f.isSCL = f.isDestination = true;
+            if (matchRegex(pid,"^I2C\\s*to\\s*Parallel-\\d+-in0$")) f.isSDA = f.isDestination = true;
+            else if (matchRegex(pid,"^I2C\\s*to\\s*Parallel-\\d+-in1$")) f.isSCL = f.isDestination = true;
         }},
         {"SerialPort", [this](NetFlags& f, QString& d, Component* c, const QString& pid) {
             if (matchRegex(pid,"^SerialPort-\\d+-pin0$")) f.isTx = f.isSource = true;
@@ -112,6 +112,67 @@ SignalVisualizer::SignalVisualizer(QObject *parent)
             if (matchRegex(pid,"^Esp01-\\d+-pin0$")) f.isTx = f.isSource = true;
             else if (matchRegex(pid,"^Esp01-\\d+-pin1$")) f.isRx = f.isDestination = true;
         }}
+    },
+    m_posDesignation {
+        {"AudioOutGroup", qMakePair(QString("BA"), 1)},
+        {"CapacitorGroup", qMakePair(QString("C"), 1)},
+        {"DigitalDevicesAndMicrochipsGroup", qMakePair(QString("D"), 1)},
+        {"PowerSourceGroup", qMakePair(QString("G"), 1)},
+        {"BatteryGroup", qMakePair(QString("GB"), 1)},
+        {"DisplayGroup", qMakePair(QString("HG"), 1)},
+        {"LedGroup", qMakePair(QString("HL"), 1)},
+        {"RelayGroup", qMakePair(QString("K"), 1)},
+        {"InductorGroup", qMakePair(QString("L"), 1)},
+        {"LAnalizerGroup", qMakePair(QString("LA"), 1)},
+        {"OscopeGroup", qMakePair(QString("O"), 1)},
+        {"AmperimeterGroup", qMakePair(QString("PA"), 1)},
+        {"FreqMeterGroup", qMakePair(QString("PF"), 1)},
+        {"VoltimeterGroup", qMakePair(QString("PV"), 1)},
+        {"ResistorGroup", qMakePair(QString("R"), 1)},
+        {"PotentiometerGroup", qMakePair(QString("RP"), 1)},
+        {"VarResistorGroup", qMakePair(QString("RU"), 1)},
+        {"SwitchGroup", qMakePair(QString("S"), 1)},
+        {"ButtonGroup", qMakePair(QString("SB"), 1)},
+        {"KeyPadGroup", qMakePair(QString("XS"), 1)}
+    },
+    m_typeToGroup {
+        {"AudioOut", "AudioOutGroup"},
+        {"Capacitor", "CapacitorGroup"},
+        {"MCU", "DigitalDevicesAndMicrochipsGroup"},
+        {"Subcircuit", "DigitalDevicesAndMicrochipsGroup"},
+        {"I2CToParallel", "DigitalDevicesAndMicrochipsGroup"},
+        {"BcdTo7S", "DigitalDevicesAndMicrochipsGroup"},
+        {"Rail", "PowerSourceGroup"},
+        {"Fixed Voltage", "PowerSourceGroup"},
+        {"Voltage Source", "PowerSourceGroup"},
+        {"Battery", "BatteryGroup"},
+        {"Led", "LedGroup"},
+        {"LedRgb", "LedGroup"},
+        {"LedBar", "LedGroup"},
+        {"LedMatrix", "LedGroup"},
+        {"Max72xx_matrix", "LedGroup"},
+        {"WS2812", "LedGroup"},
+        {"Hd44780", "DisplayGroup"},
+        {"Aip31068_i2c", "DisplayGroup"},
+        {"Pcd8544", "DisplayGroup"},
+        {"Ks0108", "DisplayGroup"},
+        {"Ssd1306", "DisplayGroup"},
+        {"Ili9341", "DisplayGroup"},
+        {"RelaySPST", "RelayGroup"},
+        {"Inductor", "InductorGroup"},
+        {"LAnalizer", "LAnalizerGroup"},
+        {"Oscope", "OscopeGroup"},
+        {"Amperimeter", "AmperimeterGroup"},
+        {"FreqMeter", "FreqMeterGroup"},
+        {"Voltimeter", "VoltimeterGroup"},
+        {"Resistor", "ResistorGroup"},
+        {"ResistorDip", "ResistorGroup"},
+        {"Potentiometer", "PotentiometerGroup"},
+        {"VarResistor", "VarResistorGroup"},
+        {"SwitchDip","SwitchGroup"},
+        {"Switch", "SwitchGroup"},
+        {"Push", "ButtonGroup"},
+        {"KeyPad", "KeyPadGroup"}
     }
 {
     // Конструктор
@@ -134,7 +195,6 @@ void SignalVisualizer::colorizeCircuit() {
         SignalAttributes attr;
         determineSignalType(flags, designation, attr);
 
-        qDebug() << "attr.typeColor после determineSignalType()" << attr.typeColor;
         applyLineAppearance(attr, net);
     }
     assignVoltageGradientColors();
@@ -587,6 +647,29 @@ void SignalVisualizer::setTypeLineColorByGroup(QColor color, QList<QGraphicsLine
     }
 }
 
+QList<QString> SignalVisualizer::getExtractedDesignations() const {
+    QList<QString> result;
+
+    for (const auto &net : m_netConnections) {
+        if (!net.designation.isEmpty() && !result.contains(net.designation)) {
+            result.append(net.designation);
+        }
+    }
+    return result;
+}
+
+QList<QString> SignalVisualizer::getExtractedCategories() const {
+    QList<QString> result;
+
+    for (const auto &net : m_netConnections) {
+        if (!net.type.isEmpty() && !result.contains(net.type)) {
+            result.append(net.type);
+        }
+    }
+
+    return result;
+}
+
 QColor SignalVisualizer::getLineColorByGroup(const QList<QGraphicsLineItem*>& lineGroup, bool isShowingTypes) const {
     QSet<QGraphicsLineItem*> inputSet = QSet<QGraphicsLineItem*>(lineGroup.begin(), lineGroup.end());
     for (const auto& connection :  m_netConnections) {
@@ -729,27 +812,18 @@ QString SignalVisualizer::getTypeInfoByGroup(const QList<QGraphicsLineItem*>& li
     return QString();
 }
 
-QList<QString> SignalVisualizer::getExtractedDesignations() const {
-    QList<QString> result;
+QString SignalVisualizer::getPositionalDesignation(const QString &type) {
+    QString group = m_typeToGroup.value(type, type);
 
-    for (const auto &net : m_netConnections) {
-        if (!net.designation.isEmpty() && !result.contains(net.designation)) {
-            result.append(net.designation); 
-        }
-    }
-    return result;
-}
-
-QList<QString> SignalVisualizer::getExtractedCategories() const {
-    QList<QString> result;
-
-    for (const auto &net : m_netConnections) {
-        if (!net.type.isEmpty() && !result.contains(net.type)) {
-            result.append(net.type); 
-        }
+    auto it = m_posDesignation.find(group);
+    if (it == m_posDesignation.end()) {
+        return QString();
     }
 
-    return result;
+    QString prefix = it->first;
+    int index = it->second++;
+
+    return prefix + QString::number(index);
 }
 
 void SignalVisualizer::removeDesignationForConnections(QString designation) {
