@@ -17,7 +17,7 @@
 #include <QApplication>
 #include "signalvisualizerview.h"
 #include "signalvisualizerwidget.h"
-
+#include "proxyitem.h"
 
 SignalVisualizerView::SignalVisualizerView(SignalVisualizerWidget* signalVisualizerWidget, QWidget *parent)
     : QGraphicsView(parent),
@@ -64,12 +64,17 @@ void SignalVisualizerView::createEditor() {
     m_checkboxLayout->setContentsMargins(5, 5, 5, 5);
     m_checkboxLayout->setSpacing(5);
 
+    m_hideCompPosDesignationCheckbox = new QCheckBox("Скрыть обозначения", m_checkboxOverlay);
+    m_checkboxLayout->addWidget(m_hideCompPosDesignationCheckbox);
+    connect(m_hideCompPosDesignationCheckbox, &QCheckBox::stateChanged,
+            this, &SignalVisualizerView::toggleCompPosDesignationVisibility);
+
     m_hideCompTextCheckbox = new QCheckBox("Скрыть подписи", m_checkboxOverlay);
     m_checkboxLayout->addWidget(m_hideCompTextCheckbox);
     connect(m_hideCompTextCheckbox, &QCheckBox::stateChanged,
             this, &SignalVisualizerView::toggleCompTextVisibility);
 
-    m_hideCompLabelCheckbox = new QCheckBox("Скрыть метки", m_checkboxOverlay);
+    m_hideCompLabelCheckbox = new QCheckBox("Скрыть значения", m_checkboxOverlay);
     m_checkboxLayout->addWidget(m_hideCompLabelCheckbox);
     connect(m_hideCompLabelCheckbox, &QCheckBox::stateChanged,
             this, &SignalVisualizerView::toggleCompLabelVisibility);
@@ -87,7 +92,7 @@ void SignalVisualizerView::createEditor() {
     m_manageDesignationsButton = new QPushButton("Управление обозначениями...", m_lineEditOverlay);
     m_lineEditLayout->addRow(m_manageDesignationsButton);
     connect(m_manageDesignationsButton, &QPushButton::clicked, this, &SignalVisualizerView::signalDesignationsManager);
-    connect(m_signalDesignationCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+    connect(m_signalDesignationCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
     [this](int index){
         if(index == -1) return;
         updateColorComboForDesignation(m_signalDesignationCombo->currentText());
@@ -130,7 +135,7 @@ void SignalVisualizerView::createEditor() {
     m_lineEditLayout->addRow(m_buttonLayout);
     m_lineEditOverlay->hide();
 
-    setMouseTracking(true); 
+    setMouseTracking(true);
 }
 
 void SignalVisualizerView::applyStyles() {
@@ -372,7 +377,7 @@ void SignalVisualizerView::signalDesignationsManager() {
 void SignalVisualizerView::signalTypesManager() {
     QDialog dialog(this);
     dialog.setWindowTitle("Управление типами");
-    dialog.setFixedSize(200, 80); 
+    dialog.setFixedSize(200, 80);
     QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
 
     QComboBox *typeCombo = new QComboBox();
@@ -540,9 +545,7 @@ void SignalVisualizerView::mousePressEvent(QMouseEvent *event) {
             m_selectedLineGroup = newLineGroup;
             selectLine(m_selectedLineGroup);
         } else {
-            qDebug() << "Click";
             if (m_selectedLineItem) {
-                qDebug() << "if (m_selectedLineItem) " << true;
 
                 deselectLine(m_selectedLineGroup);
                 m_selectedLineGroup.clear();
@@ -762,6 +765,15 @@ void SignalVisualizerView::toggleCompTextVisibility(int state) {
     }
 }
 
+void SignalVisualizerView::toggleCompPosDesignationVisibility(int state) {
+    bool checked = (state == Qt::Checked);
+    if (checked) {
+        setCompPosDesignationVisibility(false);
+    } else {
+        setCompPosDesignationVisibility(true);
+    }
+}
+
 void SignalVisualizerView::updateEditorOverlayPosition() {
     int rightMargin = 10;
     int topMargin = 10;
@@ -947,6 +959,12 @@ void SignalVisualizerView::setCompTextVisibility(bool visible) {
     }
 }
 
+void SignalVisualizerView::setCompPosDesignationVisibility(bool visible) {
+    for (ComponentOverlayTextItem* item : m_overlayItems) {
+        item->setPosDesignationVisible(visible);
+    }
+}
+
 void SignalVisualizerView::displayConnecors(Circuit* circuit) {
     if (!circuit) return;
 
@@ -1034,11 +1052,11 @@ void SignalVisualizerView::displayComponents(Circuit* circuit) {
             QPointF scenePos = comp->scenePos();
             QRectF boundingRect = comp->mapRectToScene(comp->boundingRect());
 
-            MainComponentProxyItem* proxyItem = new MainComponentProxyItem(comp);
+            MainComponentProxyItem* proxyItem = new MainComponentProxyItem(comp, this);
             proxyItem->setZValue(ZLevel::Components);
             m_signalVisualizerWidget->m_scene->addItem(proxyItem);
 
-            ComponentOverlayTextItem* overlayItem = new ComponentOverlayTextItem(comp);
+            ComponentOverlayTextItem* overlayItem = new ComponentOverlayTextItem(comp, this);
             overlayItem->setZValue(ZLevel::Labels);
             m_signalVisualizerWidget->m_scene->addItem(overlayItem);
             m_overlayItems.append(overlayItem);
