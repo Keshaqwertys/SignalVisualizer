@@ -92,19 +92,20 @@ public:
 
     QList<QString> getExtractedDesignations() const;
     QList<QString> getExtractedCategories() const;
+    QColor getLineColorByGroup(const QList<QGraphicsLineItem*>& lineGroup, bool isShowingTypes) const;
     QColor getDesignationColorByGroup(const QList<QGraphicsLineItem*>& lineGroup) const;
     QColor getTypeColorByGroup(const QList<QGraphicsLineItem*>& lineGroup) const;
     QList<QColor> getColorsByDesignation(const QString &designation) const;
     QList<QColor> getColorsByType(const QString &type) const;
-    QString getDesignationByGroup(const QList<QGraphicsLineItem*>& lineGroup) const;
     QString getTypeByGroup(const QList<QGraphicsLineItem*>& lineGroup) const;
+    QString getDesignationByGroup(const QList<QGraphicsLineItem*>& lineGroup) const;
     QList<int> getThicknessesByDesignation(const QString &designation) const;
     QString getTypeInfoByLine(QGraphicsLineItem* lineItem) const;
     QString getDesignationInfoByLine(QGraphicsLineItem* lineItem) const;
-    QString getTypeInfoByGroup(const QList<QGraphicsLineItem*>& lineGroup) const;
     QString getDesignationInfoByGroup(const QList<QGraphicsLineItem*>& lineGroup) const;
+    QString getTypeInfoByGroup(const QList<QGraphicsLineItem*>& lineGroup) const;
+    QString getPositionalDesignation(const QString &type);
     QList<QGraphicsLineItem*> getGroupByLine(QGraphicsLineItem* lineItem) const;
-    QColor getLineColorByGroup(const QList<QGraphicsLineItem*>& lineGroup, bool isShowingTypes) const;
 
     void removeDesignationForConnections(QString designation);
     void removeTypeForConnections(const QString& type);
@@ -159,6 +160,8 @@ private:
     QMap<QString, std::function<void(NetFlags&, double&, QString&, Component*, const QString&)>> m_sourceHandlers;
     QMap<QString, std::function<void(NetFlags&, const QString&)>> m_destHandlers;
     QMap<QString, std::function<void(NetFlags&, QString&, Component*, const QString&)>> m_multiHandlers;
+    QMap<QString, QPair<QString, int>> m_posDesignation;
+    QMap<QString, QString> m_typeToGroup;
 
     void analyzePins(const NetConnections& net, NetFlags& flags, QString& designation);
     void determineSignalType(const NetFlags& flags, const QString& designation, SignalAttributes& attr);
