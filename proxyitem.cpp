@@ -1,14 +1,16 @@
+#include <QGraphicsSimpleTextItem>
+#include <QPainter>
+#include <QGraphicsSimpleTextItem>
+#include <unordered_set>
 #include "proxyitem.h"
 #include "pin.h"
 #include "mcu.h"
 #include "iocomponent.h"
 #include "iopin.h"
 #include "logiccomponent.h"
-#include <QGraphicsSimpleTextItem>
-#include <QPainter>
 #include "signalvisualizerview.h"
-#include <QGraphicsSimpleTextItem>
-#include <unordered_set>
+#include "signalvisualizerwidget.h"
+#include "signalvisualizer.h"
 #include "circuit.h"
 #include "chip.h"
 #include "e-node.h"
@@ -18,8 +20,8 @@
 #include "plotbase.h"
 #include "node.h"
 
-MainComponentProxyItem::MainComponentProxyItem(Component* comp)
-    : m_component(comp) {
+MainComponentProxyItem::MainComponentProxyItem(Component* comp, SignalVisualizerView* view)
+    : m_component(comp), m_visualizerView(view) {
     connect(m_component, &QObject::destroyed, this, [this]() {
         this->deleteLater();
     });
@@ -162,8 +164,8 @@ void SubComponentProxyItem::paint(QPainter* painter, const QStyleOptionGraphicsI
     m_component->paint(painter, option, widget);
 }
 
-ComponentOverlayTextItem::ComponentOverlayTextItem(Component* comp, QGraphicsItem* parent)
-    : QGraphicsItem(parent), m_component(comp)
+ComponentOverlayTextItem::ComponentOverlayTextItem(Component* comp, SignalVisualizerView* view, QGraphicsItem* parent)
+    : QGraphicsItem(parent), m_component(comp), m_visualizerView(view)
 {
     // Label (ID)
     if (Label* idLabel = comp->getIdLabel()) {
@@ -171,7 +173,7 @@ ComponentOverlayTextItem::ComponentOverlayTextItem(Component* comp, QGraphicsIte
             m_idTextItem = new Label();
             m_idTextItem->setComponent(comp);
             m_idTextItem->setPlainText(idLabel->toPlainText());
-            m_idTextItem->setFont(idLabel->font());
+            m_idTextItem->setFont(QFont("Consolas", 8));
             m_idTextItem->setDefaultTextColor(Qt::black);
             m_idTextItem->setParentItem(this);
             m_textItems.append(m_idTextItem);
@@ -183,12 +185,33 @@ ComponentOverlayTextItem::ComponentOverlayTextItem(Component* comp, QGraphicsIte
         if (label->isVisible()) {
             m_valLabel = new Label();
             m_valLabel->setPlainText(label->toPlainText());
-            m_valLabel->setFont(label->font());
+            m_valLabel->setFont(QFont("Arial", 8));
             m_valLabel->setDefaultTextColor(Qt::darkRed);
             m_valLabel->setParentItem(this);
             m_valLabel->setAcceptedMouseButtons(Qt::NoButton);
             m_labelItems.append(m_valLabel);
         }
+    }
+
+    // Label (Позиционное обозначение)
+    QString posDesignation = m_visualizerView->m_signalVisualizerWidget->getModel()->getPositionalDesignation(comp->itemType());
+    if (!posDesignation.isEmpty()) {
+        m_posDesignationItem = new Label();
+        m_posDesignationItem->setComponent(comp);
+        m_posDesignationItem->setPlainText(posDesignation);
+        m_posDesignationItem->setFont(QFont("Consolas", 10));
+        m_posDesignationItem->setDefaultTextColor(Qt::black);
+
+        if (m_idTextItem) {
+            m_posDesignationItem->setParentItem(m_idTextItem);
+            qreal yOffset = -m_posDesignationItem->boundingRect().height();
+            qreal xOffset = 0;
+            m_posDesignationItem->setPos(xOffset, yOffset);
+        } else {
+            m_posDesignationItem->setParentItem(this);
+        }
+
+        m_posDesignationItems.append(m_posDesignationItem);
     }
 
     updateTextPosition();
@@ -199,12 +222,22 @@ void ComponentOverlayTextItem::updateTextPosition() {
     QPointF compPos = m_component->scenePos();
 
     if (m_idTextItem) {
-        m_idTextItem->setPos(compPos + QPointF(compRect.width() / 2 - m_idTextItem->boundingRect().width() / 2,
-                                               compRect.top() - m_idTextItem->boundingRect().top() - 15));
+        m_idTextItem->setPos(compPos + QPointF(
+            compRect.width() / 2 - m_idTextItem->boundingRect().width() / 2,
+            compRect.top() - m_idTextItem->boundingRect().top() - 15
+        ));
     }
 
     if (m_valLabel) {
         m_valLabel->setPos(compPos + QPointF(5, 0));
+    }
+
+    // Если нет ID, то позиционируем posDesignationItem вручную
+    if (m_posDesignationItem && !m_idTextItem) {
+        m_posDesignationItem->setPos(compPos + QPointF(
+            compRect.width() / 2 - m_posDesignationItem->boundingRect().width() / 2,
+            compRect.top() - m_posDesignationItem->boundingRect().top() - 15
+        ));
     }
 }
 
@@ -230,12 +263,23 @@ void ComponentOverlayTextItem::setLabelVisible(bool visible) {
     }
 }
 
+void ComponentOverlayTextItem::setPosDesignationVisible(bool visible) {
+    for (auto* item : m_posDesignationItems) {
+        if (item)
+            item->setVisible(visible);
+    }
+}
+
 const QList<QGraphicsTextItem*>& ComponentOverlayTextItem::getTextItems() const {
     return m_textItems;
 }
 
 const QList<QGraphicsTextItem*>& ComponentOverlayTextItem::getLabelItems() const {
     return m_labelItems;
+}
+
+const QList<QGraphicsTextItem*>& ComponentOverlayTextItem::getPosDesignationslItems() const {
+    return m_posDesignationItems;
 }
 
 NodeProxyItem::NodeProxyItem(Node* node)
