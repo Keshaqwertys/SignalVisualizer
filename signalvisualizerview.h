@@ -74,6 +74,7 @@ public slots:
     void toggleDisplayMode(bool showCategories);
     void setCompLabelVisibility(bool visible);
     void setCompTextVisibility(bool visible);
+    void setCompPosDesignationVisibility(bool visible);
     void updateDesignationCombo();
     void updateTypeCombo();
 
@@ -98,6 +99,7 @@ private:
 
     void toggleCompLabelVisibility(int state);
     void toggleCompTextVisibility(int state);
+    void toggleCompPosDesignationVisibility(int state);
 
     void selectLine(QList<QGraphicsLineItem*>& lineGroup);
     void deselectLine(QList<QGraphicsLineItem*>& lineGroup);
@@ -153,6 +155,7 @@ private:
     QWidget *m_checkboxOverlay;
     QCheckBox *m_hideCompLabelCheckbox;
     QCheckBox *m_hideCompTextCheckbox;
+    QCheckBox *m_hideCompPosDesignationCheckbox;
 
     QLabel *m_tooltipLabel;
     QGraphicsLineItem *m_hoveredItem;
