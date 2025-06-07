@@ -20,7 +20,7 @@ class QWidget;
 class MainComponentProxyItem : public QObject, public QGraphicsItem {
     Q_OBJECT
 public:
-    MainComponentProxyItem(Component* comp);
+    MainComponentProxyItem(Component* comp, SignalVisualizerView* view);
 
     QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
@@ -31,7 +31,7 @@ private:
 
     QString m_id;
     Component* m_component;
-    //SignalVisualizerView* m_visualizerView;
+    SignalVisualizerView* m_visualizerView;
     QList<QGraphicsTextItem*> m_labelItems;
     QList<QGraphicsTextItem*> m_textItems;
     QGraphicsSimpleTextItem* m_labelCopy = nullptr;
@@ -67,20 +67,23 @@ private:
 
 class ComponentOverlayTextItem : public QGraphicsItem {
 public:
-    ComponentOverlayTextItem(Component* comp, QGraphicsItem* parent = nullptr);
+    ComponentOverlayTextItem(Component* comp, SignalVisualizerView* view, QGraphicsItem* parent = nullptr);
 
     void updateTextPosition();
     void setTextVisible(bool visible);
     void setLabelVisible(bool visible);
+    void setPosDesignationVisible(bool visible);
 
     QRectF boundingRect() const override;
     void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
     const QList<QGraphicsTextItem*>& getTextItems() const;
     const QList<QGraphicsTextItem*>& getLabelItems() const;
+    const QList<QGraphicsTextItem*>& getPosDesignationslItems() const;
 
 private:
     Component* m_component;
+    SignalVisualizerView* m_visualizerView;
     Label* m_idTextItem = nullptr;
     Label* m_valLabel = nullptr;
     Label* m_posDesignationItem = nullptr;
